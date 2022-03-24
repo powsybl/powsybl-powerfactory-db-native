@@ -26,8 +26,10 @@ int main() {
     try {
         pf::Api api(R"(C:\Program Files\DIgSILENT\PowerFactory 2022 SP1)");
         api.activateProject("Transmission System");
-        auto studyCase = api.makeObjectUniquePtr(api.getApplication()->GetActiveStudyCase());
-        printChildren(api, *studyCase);
+//        auto studyCase = api.makeObjectUniquePtr(api.getApplication()->GetActiveStudyCase());
+//        printChildren(api, *studyCase);
+        auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
+        printChildren(api, *project);
     } catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return -1;
