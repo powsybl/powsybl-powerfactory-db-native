@@ -68,8 +68,8 @@ public:
         return _api->GetApplication();
     }
 
-    std::vector<ObjectUniquePtr> getChildren(const ObjectUniquePtr& parent) const;
-    std::vector<std::string> getAttributeNames(const ObjectUniquePtr& object) const;
+    std::vector<ObjectUniquePtr> getChildren(const api::v2::DataObject& parent) const;
+    std::vector<std::string> getAttributeNames(const api::v2::DataObject& object) const;
 
     void activateProject(const std::string& projectName);
 

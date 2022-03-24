@@ -58,9 +58,9 @@ void Api::activateProject(const std::string& projectName) {
     }
 }
 
-std::vector<ObjectUniquePtr> Api::getChildren(const ObjectUniquePtr& parent) const {
+std::vector<ObjectUniquePtr> Api::getChildren(const api::v2::DataObject& parent) const {
     std::vector<ObjectUniquePtr> children;
-    auto childrenVal= makeValueUniquePtr(parent->GetChildren(false));
+    auto childrenVal= makeValueUniquePtr(parent.GetChildren(false));
     children.reserve(childrenVal->VecGetSize());
     for (size_t i = 0; i < childrenVal->VecGetSize(); ++i) {
         auto child = makeObjectUniquePtr(static_cast<api::v2::DataObject*>(childrenVal->VecGetDataObject(i)));
@@ -69,9 +69,9 @@ std::vector<ObjectUniquePtr> Api::getChildren(const ObjectUniquePtr& parent) con
     return children;
 }
 
-std::vector<std::string> Api::getAttributeNames(const ObjectUniquePtr& object) const {
+std::vector<std::string> Api::getAttributeNames(const api::v2::DataObject& object) const {
     std::vector<std::string> names;
-    auto namesVal = makeValueUniquePtr(object->GetAttributeNames());
+    auto namesVal = makeValueUniquePtr(object.GetAttributeNames());
     names.reserve(namesVal->VecGetSize());
     for (size_t i = 0; i < namesVal->VecGetSize(); ++i) {
         names.emplace_back(namesVal->VecGetString(i));
