@@ -7,6 +7,7 @@
  * @file db.cpp
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
+#include <jni.h>
 
 #ifdef __cplusplus
 extern "C" {
