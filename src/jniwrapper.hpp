@@ -80,6 +80,18 @@ private:
     mutable const char* _ptr;
 };
 
+class ComPowsyblPowerFactoryDbDataObjectBuilder : public JniWrapper<jobject> {
+public:
+    ComPowsyblPowerFactoryDbDataObjectBuilder(JNIEnv* env, jobject obj);
+
+    static void init(JNIEnv* env);
+
+    bool createClass(const std::string& name) const;
+private:
+    static jclass _cls;
+    static jmethodID _createClass;
+};
+
 void throwPowsyblException(JNIEnv* env, const char* msg);
 
 }  // namespace jni

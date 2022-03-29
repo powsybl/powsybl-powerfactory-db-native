@@ -13,6 +13,28 @@
 #include "api.h"
 
 namespace pf = powsybl::powerfactory;
+namespace jni = powsybl::jni;
+
+namespace powsybl {
+
+namespace powerfactory {
+
+void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
+              const api::v2::DataObject &object) {
+    auto children = api.getChildren(object);
+    for (auto itC = children.begin(); itC != children.end(); ++itC) {
+        auto &child = *itC;
+        auto className = api.makeValueUniquePtr(child->GetClassNameA());
+        if (objectBuilder.createClass(className->GetString())) {
+
+        }
+        traverse(api, objectBuilder, *child);
+    }
+}
+
+}
+
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,10 +51,12 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         std::string powerFactoryHomeDir = powsybl::jni::StringUTF(env, j_powerFactoryHomeDir).toStr();
         std::string projectName = powsybl::jni::StringUTF(env, j_projectName).toStr();
 
-        pf::Api api(R"(C:\Program Files\DIgSILENT\PowerFactory 2022 SP1)");
-        api.activateProject("Transmission System");
+        pf::Api api(powerFactoryHomeDir);
+        api.activateProject(projectName);
         auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
 
+        jni::ComPowsyblPowerFactoryDbDataObjectBuilder objectBuilder(env, j_objectBuilder);
+        pf::traverse(api, objectBuilder, *project);
     } catch (const std::exception& e) {
         powsybl::jni::throwPowsyblException(env, e.what());
     } catch (...) {
