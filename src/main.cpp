@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 #include <exception>
-#include "Api.h"
+#include "api.h"
 
 namespace pf = powsybl::powerfactory;
 

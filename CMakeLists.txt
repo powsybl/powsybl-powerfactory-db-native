@@ -16,7 +16,7 @@ add_library(powerfactory-api STATIC IMPORTED)
 set_target_properties(powerfactory-api PROPERTIES IMPORTED_LOCATION ${POWERFACTORY_HOME}\\Api\\lib\\VS2019\\digapivalue.lib)
 set_target_properties(powerfactory-api PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${POWERFACTORY_HOME}\\Api\\include)
 
-set(SOURCES src/db.cpp src/main.cpp src/Api.cpp)
+set(SOURCES src/db.cpp src/main.cpp src/api.cpp src/jniwrapper.cpp)
 add_library(powsybl-powerfactory-db-native SHARED ${SOURCES})
 set_target_properties(powsybl-powerfactory-db-native PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/target/classes/natives/windows_64")
 

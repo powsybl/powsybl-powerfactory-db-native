@@ -8,6 +8,11 @@
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 #include <jni.h>
+#include <iostream>
+#include "jniwrapper.hpp"
+#include "api.h"
+
+namespace pf = powsybl::powerfactory;
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,8 +24,20 @@ extern "C" {
  * Signature: (Ljava/lang/String;Ljava/lang/String;Lcom/powsybl/powerfactory/db/DataObjectBuilder;)V
  */
 JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
-(JNIEnv *, jobject, jstring j_powerFactoryHome, jstring j_projectName, jobject j_objectBuilder) {
+(JNIEnv * env, jobject, jstring j_powerFactoryHomeDir, jstring j_projectName, jobject j_objectBuilder) {
+    try {
+        std::string powerFactoryHomeDir = powsybl::jni::StringUTF(env, j_powerFactoryHomeDir).toStr();
+        std::string projectName = powsybl::jni::StringUTF(env, j_projectName).toStr();
 
+        pf::Api api(R"(C:\Program Files\DIgSILENT\PowerFactory 2022 SP1)");
+        api.activateProject("Transmission System");
+        auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
+
+    } catch (const std::exception& e) {
+        powsybl::jni::throwPowsyblException(env, e.what());
+    } catch (...) {
+        powsybl::jni::throwPowsyblException(env, "Unknown exception");
+    }
 }
 
 #ifdef __cplusplus
