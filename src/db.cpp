@@ -24,9 +24,21 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     auto children = api.getChildren(object);
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
-        auto className = api.makeValueUniquePtr(child->GetClassNameA());
-        if (objectBuilder.createClass(className->GetString())) {
-
+        std::string className = api.makeValueUniquePtr(child->GetClassNameA())->GetString();
+        if (objectBuilder.createClass(className)) {
+            auto attributeNames = api.getAttributeNames(*child);
+            for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
+                auto& attributeName = *itN;
+                int type = child->GetAttributeType(attributeName.c_str());
+                if (type != -1) { // what does it means?
+                    auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
+                    std::string description;
+                    if (descriptionValue) {
+                        description = api.makeValueUniquePtr(descriptionValue)->GetString();
+                        objectBuilder.createAttribute(className, attributeName, type, description);
+                    }
+                }
+            }
         }
         traverse(api, objectBuilder, *child);
     }

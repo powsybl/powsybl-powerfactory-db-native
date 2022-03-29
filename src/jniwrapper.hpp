@@ -87,9 +87,13 @@ public:
     static void init(JNIEnv* env);
 
     bool createClass(const std::string& name) const;
+
+    void createAttribute(const std::string& className, const std::string& attributeName, int type, const std::string& description) const;
+
 private:
     static jclass _cls;
     static jmethodID _createClass;
+    static jmethodID _createAttribute;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);
