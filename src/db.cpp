@@ -20,17 +20,19 @@ namespace powsybl {
 namespace powerfactory {
 
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
-              const api::v2::DataObject &object) {
+              const api::v2::DataObject &object, long& id) {
     auto children = api.getChildren(object);
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
+
+        // create class and attributes
         std::string className = api.makeValueUniquePtr(child->GetClassNameA())->GetString();
         if (objectBuilder.createClass(className)) {
             auto attributeNames = api.getAttributeNames(*child);
             for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
                 auto& attributeName = *itN;
                 int type = child->GetAttributeType(attributeName.c_str());
-                if (type != -1) { // what does it means?
+                if (type != -1) { // what does it mean?
                     auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
                     std::string description;
                     if (descriptionValue) {
@@ -40,7 +42,11 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                 }
             }
         }
-        traverse(api, objectBuilder, *child);
+
+        // create object
+        objectBuilder.createObject(id++, className, -1);
+
+        traverse(api, objectBuilder, *child, id);
     }
 }
 
@@ -68,7 +74,8 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
 
         jni::ComPowsyblPowerFactoryDbDataObjectBuilder objectBuilder(env, j_objectBuilder);
-        pf::traverse(api, objectBuilder, *project);
+        long id = 0;
+        pf::traverse(api, objectBuilder, *project, id);
     } catch (const std::exception& e) {
         powsybl::jni::throwPowsyblException(env, e.what());
     } catch (...) {

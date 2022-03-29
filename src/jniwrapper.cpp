@@ -17,6 +17,7 @@ namespace jni {
 jclass ComPowsyblPowerFactoryDbDataObjectBuilder::_cls = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createClass = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createAttribute = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createObject = nullptr;
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
     if (!_cls) {
@@ -24,6 +25,7 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
         _cls = reinterpret_cast<jclass>(env->NewGlobalRef(localCls));
         _createClass = env->GetMethodID(_cls, "createClass", "(Ljava/lang/String;)Z");
         _createAttribute = env->GetMethodID(_cls, "createAttribute", "(Ljava/lang/String;Ljava/lang/String;ILjava/lang/String;)V");
+        _createObject = env->GetMethodID(_cls, "createObject", "(JLjava/lang/String;J)V");
     }
 }
 
@@ -42,6 +44,11 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::createAttribute(const std::strin
     jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
     jstring j_description = _env->NewStringUTF(description.c_str());
     _env->CallObjectMethod(_obj, _createAttribute, j_className, j_attributeName, (jint) type, j_description);
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::createObject(long id, const std::string& className, long parentId) const {
+    jstring j_className = _env->NewStringUTF(className.c_str());
+    _env->CallObjectMethod(_obj, _createObject, (jlong) id, j_className, (jlong) parentId);
 }
 
 void throwPowsyblException(JNIEnv* env, const char* msg) {

@@ -90,10 +90,13 @@ public:
 
     void createAttribute(const std::string& className, const std::string& attributeName, int type, const std::string& description) const;
 
+    void createObject(long id, const std::string& className, long parentId) const;
+
 private:
     static jclass _cls;
     static jmethodID _createClass;
     static jmethodID _createAttribute;
+    static jmethodID _createObject;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);
