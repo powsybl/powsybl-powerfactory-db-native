@@ -8,7 +8,7 @@
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 #include <stdexcept>
-#include "Api.h"
+#include "api.h"
 
 extern "C" {
 
