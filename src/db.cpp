@@ -32,7 +32,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
             for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
                 auto& attributeName = *itN;
                 int type = child->GetAttributeType(attributeName.c_str());
-                if (type != -1) { // what does it mean?
+                if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
                     auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
                     std::string description;
                     if (descriptionValue) {
