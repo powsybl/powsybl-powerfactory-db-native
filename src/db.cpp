@@ -25,28 +25,34 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
 
-        // create class and attributes
+        // create class if not already exist
         std::string className = api.makeValueUniquePtr(child->GetClassNameA())->GetString();
-        if (objectBuilder.createClass(className)) {
-            auto attributeNames = api.getAttributeNames(*child);
-            for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
-                auto& attributeName = *itN;
-                int type = child->GetAttributeType(attributeName.c_str());
-                if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
-                    auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
-                    std::string description;
-                    if (descriptionValue) {
-                        description = api.makeValueUniquePtr(descriptionValue)->GetString();
-                        objectBuilder.createAttribute(className, attributeName, type, description);
-                    }
+        objectBuilder.createClass(className);
+
+        // create object
+        objectBuilder.createObject(id, className, -1);
+
+        auto attributeNames = api.getAttributeNames(*child);
+        for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
+            auto& attributeName = *itN;
+            int type = child->GetAttributeType(attributeName.c_str());
+            if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
+                // create attribute
+                auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
+                std::string description = descriptionValue ? api.makeValueUniquePtr(descriptionValue)->GetString() : "";
+                objectBuilder.createAttribute(className, attributeName, type, description);
+
+                // set attribute value to object
+                switch (type) {
+                    case api::v2::DataObject::AttributeType::TYPE_STRING:
+                        std::string value = api.makeValueUniquePtr(child->GetAttributeString(attributeName.c_str()))->GetString();
+                        objectBuilder.setStringAttributeValue(id, attributeName, value);
+                        break;
                 }
             }
         }
 
-        // create object
-        objectBuilder.createObject(id++, className, -1);
-
-        traverse(api, objectBuilder, *child, id);
+        traverse(api, objectBuilder, *child, ++id);
     }
 }
 
