@@ -8,7 +8,7 @@
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 #include <jni.h>
-#include <iostream>
+#include <map>
 #include "jniwrapper.hpp"
 #include "api.h"
 
@@ -20,39 +20,53 @@ namespace powsybl {
 namespace powerfactory {
 
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
-              const api::v2::DataObject &object, long& id) {
-    auto children = api.getChildren(object);
-    for (auto itC = children.begin(); itC != children.end(); ++itC) {
-        auto &child = *itC;
+              const ObjectUniquePtr& object, long& idCount, long parentId, std::map<long, long>& idToParentId) {
+    // create class if not already exist
+    std::string className = api.makeValueUniquePtr(object->GetClassNameA())->GetString();
+    objectBuilder.createClass(className);
 
-        // create class if not already exist
-        std::string className = api.makeValueUniquePtr(child->GetClassNameA())->GetString();
-        objectBuilder.createClass(className);
+    // create object
+    long id = idCount++;
+    idToParentId.insert({id, parentId});
+    objectBuilder.createObject(id, className);
 
-        // create object
-        objectBuilder.createObject(id, className, -1);
+    auto attributeNames = api.getAttributeNames(*object);
+    for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
+        auto& attributeName = *itN;
+        int type = object->GetAttributeType(attributeName.c_str());
+        if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
+            // create attribute
+            auto descriptionValue = object->GetAttributeDescription(attributeName.c_str());
+            std::string description = descriptionValue ? api.makeValueUniquePtr(descriptionValue)->GetString() : "";
+            objectBuilder.createAttribute(className, attributeName, type, description);
 
-        auto attributeNames = api.getAttributeNames(*child);
-        for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
-            auto& attributeName = *itN;
-            int type = child->GetAttributeType(attributeName.c_str());
-            if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
-                // create attribute
-                auto descriptionValue = child->GetAttributeDescription(attributeName.c_str());
-                std::string description = descriptionValue ? api.makeValueUniquePtr(descriptionValue)->GetString() : "";
-                objectBuilder.createAttribute(className, attributeName, type, description);
+            // set attribute value to object
+            switch (type) {
+                case api::v2::DataObject::AttributeType::TYPE_STRING: {
+                    std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()))->GetString();
+                    objectBuilder.setStringAttributeValue(id, attributeName, value);
+                    break;
+                }
 
-                // set attribute value to object
-                switch (type) {
-                    case api::v2::DataObject::AttributeType::TYPE_STRING:
-                        std::string value = api.makeValueUniquePtr(child->GetAttributeString(attributeName.c_str()))->GetString();
-                        objectBuilder.setStringAttributeValue(id, attributeName, value);
-                        break;
+                case api::v2::DataObject::AttributeType::TYPE_INTEGER: {
+                    int value = object->GetAttributeInt(attributeName.c_str());
+                    objectBuilder.setIntAttributeValue(id, attributeName, value);
+                    break;
+                }
+
+                case api::v2::DataObject::AttributeType::TYPE_DOUBLE: {
+                    double value = object->GetAttributeDouble(attributeName.c_str());
+                    objectBuilder.setDoubleAttributeValue(id, attributeName, value);
+                    break;
                 }
             }
         }
+    }
 
-        traverse(api, objectBuilder, *child, ++id);
+    auto children = api.getChildren(*object);
+    for (auto itC = children.begin(); itC != children.end(); ++itC) {
+        auto &child = *itC;
+        traverse(api, objectBuilder, child, idCount, id, idToParentId);
     }
 }
 
@@ -80,8 +94,21 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
 
         jni::ComPowsyblPowerFactoryDbDataObjectBuilder objectBuilder(env, j_objectBuilder);
-        long id = 0;
-        pf::traverse(api, objectBuilder, *project, id);
+
+        // create objects
+        long idCount = 0;
+        std::map<long, long> idToParentId;
+        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId);
+
+        // set parents
+        for (auto it = idToParentId.begin(); it != idToParentId.end(); ++it) {
+            long id = it->first;
+            long parentId = it->second;
+            if (parentId != -1) {
+                objectBuilder.setObjectParent(id, parentId);
+            }
+        }
+
     } catch (const std::exception& e) {
         powsybl::jni::throwPowsyblException(env, e.what());
     } catch (...) {

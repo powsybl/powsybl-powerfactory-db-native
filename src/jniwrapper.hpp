@@ -90,16 +90,25 @@ public:
 
     bool createAttribute(const std::string& className, const std::string& attributeName, int type, const std::string& description) const;
 
-    void createObject(long id, const std::string& className, long parentId) const;
+    void createObject(long id, const std::string& className) const;
+
+    void setObjectParent(long id, long parentId) const;
 
     void setStringAttributeValue(long objectId, const std::string& attributeName, const std::string& value) const;
+
+    void setIntAttributeValue(long objectId, const std::string& attributeName, int value) const;
+
+    void setDoubleAttributeValue(long objectId, const std::string& attributeName, double value) const;
 
 private:
     static jclass _cls;
     static jmethodID _createClass;
     static jmethodID _createAttribute;
     static jmethodID _createObject;
+    static jmethodID _setObjectParent;
     static jmethodID _setStringAttributeValue;
+    static jmethodID _setIntAttributeValue;
+    static jmethodID _setDoubleAttributeValue;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);
