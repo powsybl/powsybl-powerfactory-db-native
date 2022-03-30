@@ -86,9 +86,9 @@ public:
 
     static void init(JNIEnv* env);
 
-    bool createClass(const std::string& name) const;
+    void createClass(const std::string& name) const;
 
-    bool createAttribute(const std::string& className, const std::string& attributeName, int type, const std::string& description) const;
+    void createAttribute(const std::string& className, const std::string& attributeName, int type, const std::string& description) const;
 
     void createObject(long id, const std::string& className) const;
 
