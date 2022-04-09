@@ -21,6 +21,7 @@ jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createObject = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setObjectParent = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setStringAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setIntAttributeValue = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setLongAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleAttributeValue = nullptr;
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
@@ -33,6 +34,7 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
         _setObjectParent = env->GetMethodID(_cls, "setObjectParent", "(JJ)V");
         _setStringAttributeValue = env->GetMethodID(_cls, "setStringAttributeValue", "(JLjava/lang/String;Ljava/lang/String;)V");
         _setIntAttributeValue = env->GetMethodID(_cls, "setIntAttributeValue", "(JLjava/lang/String;I)V");
+        _setLongAttributeValue = env->GetMethodID(_cls, "setLongAttributeValue", "(JLjava/lang/String;J)V");
         _setDoubleAttributeValue = env->GetMethodID(_cls, "setDoubleAttributeValue", "(JLjava/lang/String;D)V");
     }
 }
@@ -73,6 +75,11 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::setStringAttributeValue(long obj
 void ComPowsyblPowerFactoryDbDataObjectBuilder::setIntAttributeValue(long objectId, const std::string &attributeName, int value) const {
     jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
     _env->CallObjectMethod(_obj, _setIntAttributeValue, (jlong) objectId, j_attributeName, (jint) value);
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::setLongAttributeValue(long objectId, const std::string &attributeName, long value) const {
+    jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
+    _env->CallObjectMethod(_obj, _setLongAttributeValue, (jlong) objectId, j_attributeName, (jlong) value);
 }
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::setDoubleAttributeValue(long objectId, const std::string &attributeName, double value) const {

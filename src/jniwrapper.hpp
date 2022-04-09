@@ -98,6 +98,8 @@ public:
 
     void setIntAttributeValue(long objectId, const std::string& attributeName, int value) const;
 
+    void setLongAttributeValue(long objectId, const std::string& attributeName, long value) const;
+
     void setDoubleAttributeValue(long objectId, const std::string& attributeName, double value) const;
 
 private:
@@ -108,6 +110,7 @@ private:
     static jmethodID _setObjectParent;
     static jmethodID _setStringAttributeValue;
     static jmethodID _setIntAttributeValue;
+    static jmethodID _setLongAttributeValue;
     static jmethodID _setDoubleAttributeValue;
 };
 

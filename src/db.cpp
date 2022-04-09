@@ -54,6 +54,11 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                     break;
                 }
 
+                case api::v2::DataObject::AttributeType::TYPE_INTEGER64: {
+                    long value = object->GetAttributeInt64(attributeName.c_str());
+                    objectBuilder.setLongAttributeValue(id, attributeName, value);
+                    break;
+                }
                 case api::v2::DataObject::AttributeType::TYPE_DOUBLE: {
                     double value = object->GetAttributeDouble(attributeName.c_str());
                     objectBuilder.setDoubleAttributeValue(id, attributeName, value);
