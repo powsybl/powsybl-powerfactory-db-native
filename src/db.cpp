@@ -20,7 +20,8 @@ namespace powsybl {
 namespace powerfactory {
 
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
-              const ObjectUniquePtr& object, long& idCount, long parentId, std::map<long, long>& idToParentId) {
+              const ObjectUniquePtr& object, long& idCount, long parentId, std::map<long, long>& idToParentId,
+              bool fillDescription) {
     // create class if not already exist
     std::string className = api.makeValueUniquePtr(object->GetClassNameA())->GetString();
     objectBuilder.createClass(className);
@@ -36,9 +37,14 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
         int type = object->GetAttributeType(attributeName.c_str());
         if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
             // create attribute if not already exist
-            auto descriptionValue = object->GetAttributeDescription(attributeName.c_str());
-            std::string description = descriptionValue ? api.makeValueUniquePtr(descriptionValue)->GetString() : "";
-            objectBuilder.createAttribute(className, attributeName, type, description);
+            std::string description;
+            if (fillDescription) {
+                auto descriptionValue = object->GetAttributeDescription(attributeName.c_str());
+                if (descriptionValue) {
+                    description = api.makeValueUniquePtr(descriptionValue)->GetString();
+                    objectBuilder.createAttribute(className, attributeName, type, description);
+                }
+            }
 
             // set attribute value to object
             switch (type) {
@@ -71,7 +77,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     auto children = api.getChildren(*object);
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
-        traverse(api, objectBuilder, child, idCount, id, idToParentId);
+        traverse(api, objectBuilder, child, idCount, id, idToParentId, fillDescription);
     }
 }
 
@@ -103,7 +109,7 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         // create objects
         long idCount = 0;
         std::map<long, long> idToParentId;
-        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId);
+        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId, false);
 
         // set parents
         for (auto it = idToParentId.begin(); it != idToParentId.end(); ++it) {
