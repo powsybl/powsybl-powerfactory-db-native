@@ -21,7 +21,7 @@ namespace powerfactory {
 
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
               const ObjectUniquePtr& object, long& idCount, long parentId, std::map<long, long>& idToParentId,
-              bool fillDescription) {
+              std::map<std::string, int>& attributeTypes, bool fillDescription) {
     // create class if not already exist
     std::string className = api.makeValueUniquePtr(object->GetClassNameA())->GetString();
     objectBuilder.createClass(className);
@@ -34,7 +34,14 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     auto attributeNames = api.getAttributeNames(*object);
     for (auto itN = attributeNames.begin(); itN != attributeNames.end(); ++itN) {
         auto& attributeName = *itN;
-        int type = object->GetAttributeType(attributeName.c_str());
+        auto itType = attributeTypes.find(attributeName);
+        int type;
+        if (itType == attributeTypes.end()) {
+            type = object->GetAttributeType(attributeName.c_str());
+            attributeTypes.insert({attributeName, type});
+        } else {
+            type = itType->second;
+        }
         if (type != api::v2::DataObject::AttributeType::TYPE_INVALID) { // what does it mean?
             // create attribute if not already exist
             std::string description;
@@ -42,9 +49,9 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                 auto descriptionValue = object->GetAttributeDescription(attributeName.c_str());
                 if (descriptionValue) {
                     description = api.makeValueUniquePtr(descriptionValue)->GetString();
-                    objectBuilder.createAttribute(className, attributeName, type, description);
                 }
             }
+            objectBuilder.createAttribute(className, attributeName, type, description);
 
             // set attribute value to object
             switch (type) {
@@ -65,6 +72,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                     objectBuilder.setLongAttributeValue(id, attributeName, value);
                     break;
                 }
+
                 case api::v2::DataObject::AttributeType::TYPE_DOUBLE: {
                     double value = object->GetAttributeDouble(attributeName.c_str());
                     objectBuilder.setDoubleAttributeValue(id, attributeName, value);
@@ -77,7 +85,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     auto children = api.getChildren(*object);
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
-        traverse(api, objectBuilder, child, idCount, id, idToParentId, fillDescription);
+        traverse(api, objectBuilder, child, idCount, id, idToParentId, attributeTypes, fillDescription);
     }
 }
 
@@ -109,7 +117,8 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         // create objects
         long idCount = 0;
         std::map<long, long> idToParentId;
-        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId, false);
+        std::map<std::string, int> attributeTypes;
+        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId, attributeTypes, false);
 
         // set parents
         for (auto it = idToParentId.begin(); it != idToParentId.end(); ++it) {
