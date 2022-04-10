@@ -102,6 +102,8 @@ public:
 
     void setDoubleAttributeValue(long objectId, const std::string& attributeName, double value) const;
 
+    void setObjectAttributeValue(long objectId, const std::string& attributeName, long otherObjectId) const;
+
 private:
     static jclass _cls;
     static jmethodID _createClass;
@@ -112,6 +114,7 @@ private:
     static jmethodID _setIntAttributeValue;
     static jmethodID _setLongAttributeValue;
     static jmethodID _setDoubleAttributeValue;
+    static jmethodID _setObjectAttributeValue;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);

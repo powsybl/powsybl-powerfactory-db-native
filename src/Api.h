@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <map>
 #include <Windows.h>
 #include "v2/Api.hpp"
 
@@ -32,20 +33,7 @@ struct ValueDeleter {
     api::v2::Api* _api;
 };
 
-struct ObjectDeleter {
-    explicit ObjectDeleter(api::v2::Api* api)
-            : _api(api) {
-    }
-
-    void operator()(api::v2::DataObject* object) const {
-        _api->ReleaseObject(object);
-    }
-
-    api::v2::Api* _api;
-};
-
 typedef std::unique_ptr<const api::Value, ValueDeleter> ValueUniquePtr;
-typedef std::unique_ptr<api::v2::DataObject, ObjectDeleter> ObjectUniquePtr;
 
 class Api {
 public:
@@ -60,22 +48,21 @@ public:
         return {value, ValueDeleter(_api)};
     }
 
-    ObjectUniquePtr makeObjectUniquePtr(api::v2::DataObject* object) const {
-        return {object, ObjectDeleter(_api)};
-    }
+    long addObject(api::v2::DataObject* object);
+    long getObjectId(api::v2::DataObject* object) const;
 
-    api::v2::Application* getApplication() const {
-        return _api->GetApplication();
-    }
-
-    std::vector<ObjectUniquePtr> getChildren(const api::v2::DataObject& parent) const;
+    std::vector<api::v2::DataObject*> getChildren(const api::v2::DataObject& parent);
     std::vector<std::string> getAttributeNames(const api::v2::DataObject& object) const;
 
-    void activateProject(const std::string& projectName);
+    api::v2::DataObject* activateProject(const std::string& projectName);
 
-private:
+public:
     HINSTANCE _dllHandle;
     api::v2::Api* _api;
+
+    // data object pointer to long id only works because we are in default SetObjectReusingEnabled to true mode
+    // so data object are only proxy on real object that are reused when asking for same object
+    std::map<api::v2::DataObject*, long> _objectToId;
 };
 
 }

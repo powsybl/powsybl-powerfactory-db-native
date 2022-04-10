@@ -23,6 +23,7 @@ jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setStringAttributeValue = 
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setIntAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setLongAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleAttributeValue = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setObjectAttributeValue = nullptr;
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
     if (!_cls) {
@@ -36,6 +37,7 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
         _setIntAttributeValue = env->GetMethodID(_cls, "setIntAttributeValue", "(JLjava/lang/String;I)V");
         _setLongAttributeValue = env->GetMethodID(_cls, "setLongAttributeValue", "(JLjava/lang/String;J)V");
         _setDoubleAttributeValue = env->GetMethodID(_cls, "setDoubleAttributeValue", "(JLjava/lang/String;D)V");
+        _setObjectAttributeValue = env->GetMethodID(_cls, "setObjectAttributeValue", "(JLjava/lang/String;J)V");
     }
 }
 
@@ -85,6 +87,11 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::setLongAttributeValue(long objec
 void ComPowsyblPowerFactoryDbDataObjectBuilder::setDoubleAttributeValue(long objectId, const std::string &attributeName, double value) const {
     jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
     _env->CallObjectMethod(_obj, _setDoubleAttributeValue, (jlong) objectId, j_attributeName, (jdouble) value);
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::setObjectAttributeValue(long objectId, const std::string &attributeName, long otherObjectId) const {
+    jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
+    _env->CallObjectMethod(_obj, _setObjectAttributeValue, (jlong) objectId, j_attributeName, (jlong) otherObjectId);
 }
 
 void throwPowsyblException(JNIEnv* env, const char* msg) {

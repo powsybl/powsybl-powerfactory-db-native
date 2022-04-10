@@ -40,6 +40,12 @@ Api::Api(const std::string& powerFactoryHome) {
 
 Api::~Api() {
     if (_dllHandle) {
+        // release objects
+        for (auto it = _objectToId.begin(); it != _objectToId.end(); it++) {
+            auto object = it->first;
+            _api->ReleaseObject(object);
+        }
+
         DESTROYAPI destroyApi = (DESTROYAPI) GetProcAddress ((struct HINSTANCE__*) _dllHandle,
                                                              "DestroyApiInstanceV2");
         if (_api) {
@@ -49,22 +55,50 @@ Api::~Api() {
     }
 }
 
-void Api::activateProject(const std::string& projectName) {
+long Api::addObject(api::v2::DataObject* object) {
+    if (object) {
+        auto it = _objectToId.find(object);
+        if (it == _objectToId.end()) {
+            long id = _objectToId.size();
+            _objectToId.insert({object, id});
+            return id;
+        }
+        return it->second;
+    }
+    return -1;
+}
+
+long Api::getObjectId(api::v2::DataObject* object) const {
+    if (object) {
+        auto it = _objectToId.find(object);
+        if (it == _objectToId.end()) {
+            throw std::runtime_error("Object not found");
+        }
+        return it->second;
+    }
+    return -1;
+}
+
+api::v2::DataObject* Api::activateProject(const std::string& projectName) {
     auto app = _api->GetApplication();
     api::Value nameVal(projectName.c_str());
     auto errorCode = makeValueUniquePtr(app->Execute("ActivateProject", &nameVal));
     if (errorCode->GetInteger() != 0) {
         throw std::runtime_error("Project '" + projectName + "' activation failed");
     }
+    auto project = _api->GetApplication()->GetActiveProject();
+    addObject(project);
+    return project;
 }
 
-std::vector<ObjectUniquePtr> Api::getChildren(const api::v2::DataObject& parent) const {
-    std::vector<ObjectUniquePtr> children;
+std::vector<api::v2::DataObject*> Api::getChildren(const api::v2::DataObject& parent) {
+    std::vector<api::v2::DataObject*> children;
     auto childrenVal= makeValueUniquePtr(parent.GetChildren(false));
     children.reserve(childrenVal->VecGetSize());
     for (size_t i = 0; i < childrenVal->VecGetSize(); ++i) {
-        auto child = makeObjectUniquePtr(static_cast<api::v2::DataObject*>(childrenVal->VecGetDataObject(i)));
-        children.push_back(std::move(child));
+        auto child = static_cast<api::v2::DataObject*>(childrenVal->VecGetDataObject(i));
+        addObject(child);
+        children.push_back(child);
     }
     return children;
 }

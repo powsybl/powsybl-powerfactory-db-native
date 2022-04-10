@@ -20,14 +20,14 @@ namespace powsybl {
 namespace powerfactory {
 
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
-              const ObjectUniquePtr& object, long& idCount, long parentId, std::map<long, long>& idToParentId,
+              api::v2::DataObject* object, long parentId, std::map<long, long>& idToParentId,
               std::map<std::string, int>& attributeTypes, bool fillDescription) {
     // create class if not already exist
     std::string className = api.makeValueUniquePtr(object->GetClassNameA())->GetString();
     objectBuilder.createClass(className);
 
     // create object
-    long id = idCount++;
+    long id = api.getObjectId(object);
     idToParentId.insert({id, parentId});
     objectBuilder.createObject(id, className);
 
@@ -78,6 +78,12 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                     objectBuilder.setDoubleAttributeValue(id, attributeName, value);
                     break;
                 }
+
+                case api::v2::DataObject::AttributeType::TYPE_OBJECT: {
+                    auto otherObject = object->GetAttributeObject(attributeName.c_str());
+                    objectBuilder.setObjectAttributeValue(id, attributeName, api.addObject(otherObject));
+                    break;
+                }
             }
         }
     }
@@ -85,7 +91,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
     auto children = api.getChildren(*object);
     for (auto itC = children.begin(); itC != children.end(); ++itC) {
         auto &child = *itC;
-        traverse(api, objectBuilder, child, idCount, id, idToParentId, attributeTypes, fillDescription);
+        traverse(api, objectBuilder, child, id, idToParentId, attributeTypes, fillDescription);
     }
 }
 
@@ -109,16 +115,14 @@ JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
         std::string projectName = powsybl::jni::StringUTF(env, j_projectName).toStr();
 
         pf::Api api(powerFactoryHomeDir);
-        api.activateProject(projectName);
-        auto project = api.makeObjectUniquePtr(api.getApplication()->GetActiveProject());
+        auto project = api.activateProject(projectName);
 
         jni::ComPowsyblPowerFactoryDbDataObjectBuilder objectBuilder(env, j_objectBuilder);
 
         // create objects
-        long idCount = 0;
         std::map<long, long> idToParentId;
         std::map<std::string, int> attributeTypes;
-        pf::traverse(api, objectBuilder, project, idCount, -1, idToParentId, attributeTypes, false);
+        pf::traverse(api, objectBuilder, project, -1, idToParentId, attributeTypes, false);
 
         // set parents
         for (auto it = idToParentId.begin(); it != idToParentId.end(); ++it) {
