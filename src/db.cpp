@@ -84,6 +84,37 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                     objectBuilder.setObjectAttributeValue(id, attributeName, api.addObject(otherObject));
                     break;
                 }
+
+                case api::v2::DataObject::AttributeType::TYPE_DOUBLE_VEC: {
+                    int rowCount;
+                    int columnCount;
+                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+                    int col = 0;
+                    std::vector<double> values;
+                    values.reserve(rowCount);
+                    for (int row = 0; row < rowCount; row++) {
+                        double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
+                        values.push_back(value);
+                    }
+                    objectBuilder.setDoubleVectorAttributeValue(id, attributeName, values);
+                    break;
+                }
+
+                case api::v2::DataObject::AttributeType::TYPE_STRING_VEC: {
+                    int rowCount;
+                    int columnCount;
+                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+                    if (rowCount >= 0) {
+                        std::vector<std::string> values;
+                        values.reserve(rowCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str(), row))->GetString();
+                            values.push_back(value);
+                        }
+                        objectBuilder.setStringVectorAttributeValue(id, attributeName, values);
+                    }
+                    break;
+                }
             }
         }
     }

@@ -12,6 +12,7 @@
 #define JNIWRAPPER_HPP
 
 #include <string>
+#include <vector>
 #include <jni.h>
 
 namespace powsybl {
@@ -80,6 +81,31 @@ private:
     mutable const char* _ptr;
 };
 
+class JavaLangDouble : public JniWrapper<jobject> {
+public:
+    JavaLangDouble(JNIEnv* env, double d);
+
+    static void init(JNIEnv* env);
+
+private:
+    static jclass _cls;
+    static jmethodID _constructor;
+};
+
+class JavaUtilArrayList : public JniWrapper<jobject> {
+public:
+    JavaUtilArrayList(JNIEnv* env);
+
+    static void init(JNIEnv* env);
+
+    void add(jobject obj);
+
+private:
+    static jclass _cls;
+    static jmethodID _constructor;
+    static jmethodID _add;
+};
+
 class ComPowsyblPowerFactoryDbDataObjectBuilder : public JniWrapper<jobject> {
 public:
     ComPowsyblPowerFactoryDbDataObjectBuilder(JNIEnv* env, jobject obj);
@@ -104,6 +130,10 @@ public:
 
     void setObjectAttributeValue(long objectId, const std::string& attributeName, long otherObjectId) const;
 
+    void setDoubleVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<double>& value) const;
+
+    void setStringVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<std::string>& value) const;
+
 private:
     static jclass _cls;
     static jmethodID _createClass;
@@ -115,6 +145,8 @@ private:
     static jmethodID _setLongAttributeValue;
     static jmethodID _setDoubleAttributeValue;
     static jmethodID _setObjectAttributeValue;
+    static jmethodID _setDoubleVectorAttributeValue;
+    static jmethodID _setStringVectorAttributeValue;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);

@@ -14,6 +14,46 @@ namespace powsybl {
 
 namespace jni {
 
+jclass JavaLangDouble::_cls = nullptr;
+jmethodID JavaLangDouble::_constructor = nullptr;
+
+void JavaLangDouble::init(JNIEnv* env) {
+    if (!_cls) {
+        jclass localCls = env->FindClass("java/lang/Double");
+        _cls = reinterpret_cast<jclass>(env->NewGlobalRef(localCls));
+        _constructor = env->GetMethodID(_cls, "<init>", "(D)V");
+    }
+}
+
+JavaLangDouble::JavaLangDouble(JNIEnv* env, double d)
+    : JniWrapper<jobject>(env, nullptr) {
+    init(env);
+    _obj = env->NewObject(_cls, _constructor, d);
+}
+
+jclass JavaUtilArrayList::_cls = nullptr;
+jmethodID JavaUtilArrayList::_constructor = nullptr;
+jmethodID JavaUtilArrayList::_add = nullptr;
+
+void JavaUtilArrayList::init(JNIEnv* env) {
+    if (!_cls) {
+        jclass localCls = env->FindClass("java/util/ArrayList");
+        _cls = reinterpret_cast<jclass>(env->NewGlobalRef(localCls));
+        _constructor = env->GetMethodID(_cls, "<init>", "()V");
+        _add = env->GetMethodID(_cls, "add", "(Ljava/lang/Object;)Z");
+    }
+}
+
+JavaUtilArrayList::JavaUtilArrayList(JNIEnv* env)
+    : JniWrapper<jobject>(env, nullptr) {
+    init(env);
+    _obj = env->NewObject(_cls, _constructor);
+}
+
+void JavaUtilArrayList::add(jobject obj) {
+    _env->CallObjectMethod(_obj, _add, obj);
+}
+
 jclass ComPowsyblPowerFactoryDbDataObjectBuilder::_cls = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createClass = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_createAttribute = nullptr;
@@ -24,6 +64,8 @@ jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setIntAttributeValue = nul
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setLongAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setObjectAttributeValue = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleVectorAttributeValue = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setStringVectorAttributeValue = nullptr;
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
     if (!_cls) {
@@ -38,6 +80,8 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
         _setLongAttributeValue = env->GetMethodID(_cls, "setLongAttributeValue", "(JLjava/lang/String;J)V");
         _setDoubleAttributeValue = env->GetMethodID(_cls, "setDoubleAttributeValue", "(JLjava/lang/String;D)V");
         _setObjectAttributeValue = env->GetMethodID(_cls, "setObjectAttributeValue", "(JLjava/lang/String;J)V");
+        _setDoubleVectorAttributeValue = env->GetMethodID(_cls, "setDoubleVectorAttributeValue", "(JLjava/lang/String;Ljava/util/List;)V");
+        _setStringVectorAttributeValue = env->GetMethodID(_cls, "setStringVectorAttributeValue", "(JLjava/lang/String;Ljava/util/List;)V");
     }
 }
 
@@ -87,6 +131,28 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::setLongAttributeValue(long objec
 void ComPowsyblPowerFactoryDbDataObjectBuilder::setDoubleAttributeValue(long objectId, const std::string &attributeName, double value) const {
     jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
     _env->CallObjectMethod(_obj, _setDoubleAttributeValue, (jlong) objectId, j_attributeName, (jdouble) value);
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::setDoubleVectorAttributeValue(long objectId,
+                                                                              const std::string& attributeName,
+                                                                              const std::vector<double>& value) const {
+    jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
+    JavaUtilArrayList list(_env);
+    for (auto d : value) {
+        list.add(JavaLangDouble(_env, d).obj());
+    }
+    _env->CallObjectMethod(_obj, _setDoubleVectorAttributeValue, (jlong) objectId, j_attributeName, list.obj());
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::setStringVectorAttributeValue(long objectId,
+                                                                              const std::string& attributeName,
+                                                                              const std::vector<std::string>& value) const {
+    jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
+    JavaUtilArrayList list(_env);
+    for (auto str : value) {
+        list.add(_env->NewStringUTF(str.c_str()));
+    }
+    _env->CallObjectMethod(_obj, _setStringVectorAttributeValue, (jlong) objectId, j_attributeName, list.obj());
 }
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::setObjectAttributeValue(long objectId, const std::string &attributeName, long otherObjectId) const {
