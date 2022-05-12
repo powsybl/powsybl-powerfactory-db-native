@@ -81,6 +81,28 @@ private:
     mutable const char* _ptr;
 };
 
+class JavaLangInteger : public JniWrapper<jobject> {
+public:
+    JavaLangInteger(JNIEnv* env, int i);
+
+    static void init(JNIEnv* env);
+
+private:
+    static jclass _cls;
+    static jmethodID _constructor;
+};
+
+class JavaLangLong : public JniWrapper<jobject> {
+public:
+    JavaLangLong(JNIEnv* env, long l);
+
+    static void init(JNIEnv* env);
+
+private:
+    static jclass _cls;
+    static jmethodID _constructor;
+};
+
 class JavaLangDouble : public JniWrapper<jobject> {
 public:
     JavaLangDouble(JNIEnv* env, double d);
@@ -130,9 +152,15 @@ public:
 
     void setObjectAttributeValue(long objectId, const std::string& attributeName, long otherObjectId) const;
 
+    void setIntVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<int>& value) const;
+
+    void setLongVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<long>& value) const;
+
     void setDoubleVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<double>& value) const;
 
     void setStringVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<std::string>& value) const;
+
+    void setObjectVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<long>& otherObjectsIds) const;
 
 private:
     static jclass _cls;
@@ -145,8 +173,11 @@ private:
     static jmethodID _setLongAttributeValue;
     static jmethodID _setDoubleAttributeValue;
     static jmethodID _setObjectAttributeValue;
+    static jmethodID _setIntVectorAttributeValue;
+    static jmethodID _setLongVectorAttributeValue;
     static jmethodID _setDoubleVectorAttributeValue;
     static jmethodID _setStringVectorAttributeValue;
+    static jmethodID _setObjectVectorAttributeValue;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);

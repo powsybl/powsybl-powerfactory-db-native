@@ -19,6 +19,13 @@ namespace powsybl {
 
 namespace powerfactory {
 
+int getRowCount(api::v2::DataObject* object, const std::string& attributeName) {
+    int rowCount;
+    int columnCount;
+    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+    return rowCount;
+}
+
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
               api::v2::DataObject* object, long parentId, std::map<long, long>& idToParentId,
               std::map<std::string, int>& attributeTypes, bool fillDescription) {
@@ -85,10 +92,34 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                     break;
                 }
 
+                case api::v2::DataObject::AttributeType::TYPE_INTEGER_VEC: {
+                    int rowCount = getRowCount(object, attributeName);
+                    int col = 0;
+                    std::vector<int> values;
+                    values.reserve(rowCount);
+                    for (int row = 0; row < rowCount; row++) {
+                        int value = object->GetAttributeInt(attributeName.c_str(), row, col);
+                        values.push_back(value);
+                    }
+                    objectBuilder.setIntVectorAttributeValue(id, attributeName, values);
+                    break;
+                }
+
+                case api::v2::DataObject::AttributeType::TYPE_INTEGER64_VEC: {
+                    int rowCount = getRowCount(object, attributeName);
+                    int col = 0;
+                    std::vector<long> values;
+                    values.reserve(rowCount);
+                    for (int row = 0; row < rowCount; row++) {
+                        long value = object->GetAttributeInt64(attributeName.c_str(), row, col);
+                        values.push_back(value);
+                    }
+                    objectBuilder.setLongVectorAttributeValue(id, attributeName, values);
+                    break;
+                }
+
                 case api::v2::DataObject::AttributeType::TYPE_DOUBLE_VEC: {
-                    int rowCount;
-                    int columnCount;
-                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+                    int rowCount = getRowCount(object, attributeName);
                     int col = 0;
                     std::vector<double> values;
                     values.reserve(rowCount);
@@ -101,10 +132,8 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                 }
 
                 case api::v2::DataObject::AttributeType::TYPE_STRING_VEC: {
-                    int rowCount;
-                    int columnCount;
-                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
-                    if (rowCount >= 0) {
+                    int rowCount = getRowCount(object, attributeName);
+                    if (rowCount >= 0) { // sometimes we get -1 ????
                         std::vector<std::string> values;
                         values.reserve(rowCount);
                         for (int row = 0; row < rowCount; row++) {
@@ -113,6 +142,18 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
                         }
                         objectBuilder.setStringVectorAttributeValue(id, attributeName, values);
                     }
+                    break;
+                }
+
+                case api::v2::DataObject::AttributeType::TYPE_OBJECT_VEC: {
+                    int rowCount = getRowCount(object, attributeName);
+                    std::vector<long> values;
+                    values.reserve(rowCount);
+                    for (int row = 0; row < rowCount; row++) {
+                        auto otherObject = object->GetAttributeObject(attributeName.c_str(), row);
+                        values.push_back(api.addObject(otherObject));
+                    }
+                    objectBuilder.setObjectVectorAttributeValue(id, attributeName, values);
                     break;
                 }
             }
