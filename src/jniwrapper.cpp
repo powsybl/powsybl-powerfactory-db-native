@@ -103,6 +103,7 @@ jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setLongVectorAttributeValu
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleVectorAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setStringVectorAttributeValue = nullptr;
 jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setObjectVectorAttributeValue = nullptr;
+jmethodID ComPowsyblPowerFactoryDbDataObjectBuilder::_setDoubleMatrixAttributeValue = nullptr;
 
 void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
     if (!_cls) {
@@ -122,6 +123,7 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::init(JNIEnv* env) {
         _setDoubleVectorAttributeValue = env->GetMethodID(_cls, "setDoubleVectorAttributeValue", "(JLjava/lang/String;Ljava/util/List;)V");
         _setStringVectorAttributeValue = env->GetMethodID(_cls, "setStringVectorAttributeValue", "(JLjava/lang/String;Ljava/util/List;)V");
         _setObjectVectorAttributeValue = env->GetMethodID(_cls, "setObjectVectorAttributeValue", "(JLjava/lang/String;Ljava/util/List;)V");
+        _setDoubleMatrixAttributeValue = env->GetMethodID(_cls, "setDoubleMatrixAttributeValue", "(JLjava/lang/String;IILjava/util/List;)V");
     }
 }
 
@@ -231,6 +233,18 @@ void ComPowsyblPowerFactoryDbDataObjectBuilder::setObjectVectorAttributeValue(lo
         list.add(JavaLangLong(_env, otherObjectId).obj());
     }
     _env->CallObjectMethod(_obj, _setObjectVectorAttributeValue, (jlong) objectId, j_attributeName, list.obj());
+}
+
+void ComPowsyblPowerFactoryDbDataObjectBuilder::setDoubleMatrixAttributeValue(long objectId,
+                                                                              const std::string &attributeName,
+                                                                              int rowCount, int columnCount,
+                                                                              const std::vector<double> &value) const {
+    jstring j_attributeName = _env->NewStringUTF(attributeName.c_str());
+    JavaUtilArrayList list(_env);
+    for (auto d : value) {
+        list.add(JavaLangDouble(_env, d).obj());
+    }
+    _env->CallObjectMethod(_obj, _setDoubleMatrixAttributeValue, (jlong) objectId, j_attributeName, rowCount, columnCount, list.obj());
 }
 
 void throwPowsyblException(JNIEnv* env, const char* msg) {

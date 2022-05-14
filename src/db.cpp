@@ -94,46 +94,52 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
 
                 case api::v2::DataObject::AttributeType::TYPE_INTEGER_VEC: {
                     int rowCount = getRowCount(object, attributeName);
-                    int col = 0;
-                    std::vector<int> values;
-                    values.reserve(rowCount);
-                    for (int row = 0; row < rowCount; row++) {
-                        int value = object->GetAttributeInt(attributeName.c_str(), row, col);
-                        values.push_back(value);
+                    if (rowCount > 0) {
+                        int col = 0;
+                        std::vector<int> values;
+                        values.reserve(rowCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            int value = object->GetAttributeInt(attributeName.c_str(), row, col);
+                            values.push_back(value);
+                        }
+                        objectBuilder.setIntVectorAttributeValue(id, attributeName, values);
                     }
-                    objectBuilder.setIntVectorAttributeValue(id, attributeName, values);
                     break;
                 }
 
                 case api::v2::DataObject::AttributeType::TYPE_INTEGER64_VEC: {
                     int rowCount = getRowCount(object, attributeName);
-                    int col = 0;
-                    std::vector<long> values;
-                    values.reserve(rowCount);
-                    for (int row = 0; row < rowCount; row++) {
-                        long value = object->GetAttributeInt64(attributeName.c_str(), row, col);
-                        values.push_back(value);
+                    if (rowCount > 0) {
+                        int col = 0;
+                        std::vector<long> values;
+                        values.reserve(rowCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            long value = object->GetAttributeInt64(attributeName.c_str(), row, col);
+                            values.push_back(value);
+                        }
+                        objectBuilder.setLongVectorAttributeValue(id, attributeName, values);
                     }
-                    objectBuilder.setLongVectorAttributeValue(id, attributeName, values);
                     break;
                 }
 
                 case api::v2::DataObject::AttributeType::TYPE_DOUBLE_VEC: {
                     int rowCount = getRowCount(object, attributeName);
-                    int col = 0;
-                    std::vector<double> values;
-                    values.reserve(rowCount);
-                    for (int row = 0; row < rowCount; row++) {
-                        double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
-                        values.push_back(value);
+                    if (rowCount > 0) {
+                        int col = 0;
+                        std::vector<double> values;
+                        values.reserve(rowCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
+                            values.push_back(value);
+                        }
+                        objectBuilder.setDoubleVectorAttributeValue(id, attributeName, values);
                     }
-                    objectBuilder.setDoubleVectorAttributeValue(id, attributeName, values);
                     break;
                 }
 
                 case api::v2::DataObject::AttributeType::TYPE_STRING_VEC: {
                     int rowCount = getRowCount(object, attributeName);
-                    if (rowCount >= 0) { // sometimes we get -1 ????
+                    if (rowCount > 0) {
                         std::vector<std::string> values;
                         values.reserve(rowCount);
                         for (int row = 0; row < rowCount; row++) {
@@ -147,13 +153,33 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
 
                 case api::v2::DataObject::AttributeType::TYPE_OBJECT_VEC: {
                     int rowCount = getRowCount(object, attributeName);
-                    std::vector<long> values;
-                    values.reserve(rowCount);
-                    for (int row = 0; row < rowCount; row++) {
-                        auto otherObject = object->GetAttributeObject(attributeName.c_str(), row);
-                        values.push_back(api.addObject(otherObject));
+                    if (rowCount > 0) {
+                        std::vector<long> values;
+                        values.reserve(rowCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            auto otherObject = object->GetAttributeObject(attributeName.c_str(), row);
+                            values.push_back(api.addObject(otherObject));
+                        }
+                        objectBuilder.setObjectVectorAttributeValue(id, attributeName, values);
                     }
-                    objectBuilder.setObjectVectorAttributeValue(id, attributeName, values);
+                    break;
+                }
+
+                case api::v2::DataObject::AttributeType::TYPE_DOUBLE_MAT: {
+                    int rowCount;
+                    int columnCount;
+                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+                    if (rowCount > 0 && columnCount > 0) {
+                        std::vector<double> values;
+                        values.reserve(rowCount * columnCount);
+                        for (int row = 0; row < rowCount; row++) {
+                            for (int col = 0; col < columnCount; col++) {
+                                double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
+                                values.push_back(value);
+                            }
+                        }
+                        objectBuilder.setDoubleMatrixAttributeValue(id, attributeName, rowCount, columnCount, values);
+                    }
                     break;
                 }
             }

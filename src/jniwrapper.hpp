@@ -162,6 +162,8 @@ public:
 
     void setObjectVectorAttributeValue(long objectId, const std::string& attributeName, const std::vector<long>& otherObjectsIds) const;
 
+    void setDoubleMatrixAttributeValue(long objectId, const std::string& attributeName, int rowCount, int columnCount, const std::vector<double>& value) const;
+
 private:
     static jclass _cls;
     static jmethodID _createClass;
@@ -178,6 +180,7 @@ private:
     static jmethodID _setDoubleVectorAttributeValue;
     static jmethodID _setStringVectorAttributeValue;
     static jmethodID _setObjectVectorAttributeValue;
+    static jmethodID _setDoubleMatrixAttributeValue;
 };
 
 void throwPowsyblException(JNIEnv* env, const char* msg);
