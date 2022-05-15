@@ -26,6 +26,133 @@ int getRowCount(api::v2::DataObject* object, const std::string& attributeName) {
     return rowCount;
 }
 
+void readValues(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
+                api::v2::DataObject* object, long id, const std::string& attributeName, int type) {
+    // set attribute value to object
+    switch (type) {
+        case api::v2::DataObject::AttributeType::TYPE_STRING: {
+            std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()))->GetString();
+            objectBuilder.setStringAttributeValue(id, attributeName, value);
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_INTEGER: {
+            int value = object->GetAttributeInt(attributeName.c_str());
+            objectBuilder.setIntAttributeValue(id, attributeName, value);
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_INTEGER64: {
+            long value = object->GetAttributeInt64(attributeName.c_str());
+            objectBuilder.setLongAttributeValue(id, attributeName, value);
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_DOUBLE: {
+            double value = object->GetAttributeDouble(attributeName.c_str());
+            objectBuilder.setDoubleAttributeValue(id, attributeName, value);
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_OBJECT: {
+            auto otherObject = object->GetAttributeObject(attributeName.c_str());
+            objectBuilder.setObjectAttributeValue(id, attributeName, api.addObject(otherObject));
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_INTEGER_VEC: {
+            int rowCount = getRowCount(object, attributeName);
+            if (rowCount > 0) {
+                int col = 0;
+                std::vector<int> values;
+                values.reserve(rowCount);
+                for (int row = 0; row < rowCount; row++) {
+                    int value = object->GetAttributeInt(attributeName.c_str(), row, col);
+                    values.push_back(value);
+                }
+                objectBuilder.setIntVectorAttributeValue(id, attributeName, values);
+            }
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_INTEGER64_VEC: {
+            int rowCount = getRowCount(object, attributeName);
+            if (rowCount > 0) {
+                int col = 0;
+                std::vector<long> values;
+                values.reserve(rowCount);
+                for (int row = 0; row < rowCount; row++) {
+                    long value = object->GetAttributeInt64(attributeName.c_str(), row, col);
+                    values.push_back(value);
+                }
+                objectBuilder.setLongVectorAttributeValue(id, attributeName, values);
+            }
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_DOUBLE_VEC: {
+            int rowCount = getRowCount(object, attributeName);
+            if (rowCount > 0) {
+                int col = 0;
+                std::vector<double> values;
+                values.reserve(rowCount);
+                for (int row = 0; row < rowCount; row++) {
+                    double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
+                    values.push_back(value);
+                }
+                objectBuilder.setDoubleVectorAttributeValue(id, attributeName, values);
+            }
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_STRING_VEC: {
+            int rowCount = getRowCount(object, attributeName);
+            if (rowCount > 0) {
+                std::vector<std::string> values;
+                values.reserve(rowCount);
+                for (int row = 0; row < rowCount; row++) {
+                    std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str(), row))->GetString();
+                    values.push_back(value);
+                }
+                objectBuilder.setStringVectorAttributeValue(id, attributeName, values);
+            }
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_OBJECT_VEC: {
+            int rowCount = getRowCount(object, attributeName);
+            if (rowCount > 0) {
+                std::vector<long> values;
+                values.reserve(rowCount);
+                for (int row = 0; row < rowCount; row++) {
+                    auto otherObject = object->GetAttributeObject(attributeName.c_str(), row);
+                    values.push_back(api.addObject(otherObject));
+                }
+                objectBuilder.setObjectVectorAttributeValue(id, attributeName, values);
+            }
+            break;
+        }
+
+        case api::v2::DataObject::AttributeType::TYPE_DOUBLE_MAT: {
+            int rowCount;
+            int columnCount;
+            object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
+            if (rowCount > 0 && columnCount > 0) {
+                std::vector<double> values;
+                values.reserve(rowCount * columnCount);
+                for (int row = 0; row < rowCount; row++) {
+                    for (int col = 0; col < columnCount; col++) {
+                        double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
+                        values.push_back(value);
+                    }
+                }
+                objectBuilder.setDoubleMatrixAttributeValue(id, attributeName, rowCount, columnCount, values);
+            }
+            break;
+        }
+    }
+}
+
 void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &objectBuilder,
               api::v2::DataObject* object, long parentId, std::map<long, long>& idToParentId,
               std::map<std::string, int>& attributeTypes, bool fillDescription) {
@@ -60,129 +187,7 @@ void traverse(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &ob
             }
             objectBuilder.createAttribute(className, attributeName, type, description);
 
-            // set attribute value to object
-            switch (type) {
-                case api::v2::DataObject::AttributeType::TYPE_STRING: {
-                    std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()))->GetString();
-                    objectBuilder.setStringAttributeValue(id, attributeName, value);
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_INTEGER: {
-                    int value = object->GetAttributeInt(attributeName.c_str());
-                    objectBuilder.setIntAttributeValue(id, attributeName, value);
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_INTEGER64: {
-                    long value = object->GetAttributeInt64(attributeName.c_str());
-                    objectBuilder.setLongAttributeValue(id, attributeName, value);
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_DOUBLE: {
-                    double value = object->GetAttributeDouble(attributeName.c_str());
-                    objectBuilder.setDoubleAttributeValue(id, attributeName, value);
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_OBJECT: {
-                    auto otherObject = object->GetAttributeObject(attributeName.c_str());
-                    objectBuilder.setObjectAttributeValue(id, attributeName, api.addObject(otherObject));
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_INTEGER_VEC: {
-                    int rowCount = getRowCount(object, attributeName);
-                    if (rowCount > 0) {
-                        int col = 0;
-                        std::vector<int> values;
-                        values.reserve(rowCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            int value = object->GetAttributeInt(attributeName.c_str(), row, col);
-                            values.push_back(value);
-                        }
-                        objectBuilder.setIntVectorAttributeValue(id, attributeName, values);
-                    }
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_INTEGER64_VEC: {
-                    int rowCount = getRowCount(object, attributeName);
-                    if (rowCount > 0) {
-                        int col = 0;
-                        std::vector<long> values;
-                        values.reserve(rowCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            long value = object->GetAttributeInt64(attributeName.c_str(), row, col);
-                            values.push_back(value);
-                        }
-                        objectBuilder.setLongVectorAttributeValue(id, attributeName, values);
-                    }
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_DOUBLE_VEC: {
-                    int rowCount = getRowCount(object, attributeName);
-                    if (rowCount > 0) {
-                        int col = 0;
-                        std::vector<double> values;
-                        values.reserve(rowCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
-                            values.push_back(value);
-                        }
-                        objectBuilder.setDoubleVectorAttributeValue(id, attributeName, values);
-                    }
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_STRING_VEC: {
-                    int rowCount = getRowCount(object, attributeName);
-                    if (rowCount > 0) {
-                        std::vector<std::string> values;
-                        values.reserve(rowCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str(), row))->GetString();
-                            values.push_back(value);
-                        }
-                        objectBuilder.setStringVectorAttributeValue(id, attributeName, values);
-                    }
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_OBJECT_VEC: {
-                    int rowCount = getRowCount(object, attributeName);
-                    if (rowCount > 0) {
-                        std::vector<long> values;
-                        values.reserve(rowCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            auto otherObject = object->GetAttributeObject(attributeName.c_str(), row);
-                            values.push_back(api.addObject(otherObject));
-                        }
-                        objectBuilder.setObjectVectorAttributeValue(id, attributeName, values);
-                    }
-                    break;
-                }
-
-                case api::v2::DataObject::AttributeType::TYPE_DOUBLE_MAT: {
-                    int rowCount;
-                    int columnCount;
-                    object->GetAttributeSize(attributeName.c_str(), rowCount, columnCount);
-                    if (rowCount > 0 && columnCount > 0) {
-                        std::vector<double> values;
-                        values.reserve(rowCount * columnCount);
-                        for (int row = 0; row < rowCount; row++) {
-                            for (int col = 0; col < columnCount; col++) {
-                                double value = object->GetAttributeDouble(attributeName.c_str(), row, col);
-                                values.push_back(value);
-                            }
-                        }
-                        objectBuilder.setDoubleMatrixAttributeValue(id, attributeName, rowCount, columnCount, values);
-                    }
-                    break;
-                }
-            }
+            readValues(api, objectBuilder, object, id, attributeName, type);
         }
     }
 
