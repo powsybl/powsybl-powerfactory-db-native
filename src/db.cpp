@@ -9,6 +9,7 @@
  */
 #include <jni.h>
 #include <map>
+#include <stdexcept>
 #include "jniwrapper.hpp"
 #include "api.h"
 
@@ -150,6 +151,9 @@ void readValues(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &
             }
             break;
         }
+
+        default:
+            throw std::runtime_error("Unsupported attribute type " + std::to_string(type));
     }
 }
 
