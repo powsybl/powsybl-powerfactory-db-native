@@ -203,10 +203,10 @@ extern "C" {
 
 /*
  * Class:     com_powsybl_powerfactory_db_JniDatabaseReader
- * Method:    read
+ * Method:    readNative
  * Signature: (Ljava/lang/String;Ljava/lang/String;Lcom/powsybl/powerfactory/db/DataObjectBuilder;)V
  */
-JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_read
+JNIEXPORT void JNICALL Java_com_powsybl_powerfactory_db_JniDatabaseReader_readNative
 (JNIEnv * env, jobject, jstring j_powerFactoryHomeDir, jstring j_projectName, jobject j_objectBuilder) {
     try {
         std::string powerFactoryHomeDir = powsybl::jni::StringUTF(env, j_powerFactoryHomeDir).toStr();
