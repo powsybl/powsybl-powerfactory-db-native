@@ -5,12 +5,15 @@
 
 cmake_minimum_required(VERSION 3.21)
 
-project(powsybl-powerfactory-db-native)
+project(powsybl-powerfactory-db-native VERSION 1.0.0)
 
 find_package(JNI REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
-set(POWERFACTORY_HOME "C:\\Program Files\\DIgSILENT\\PowerFactory 2022 SP1")
+set(POWERFACTORY_HOME $ENV{POWERFACTORY_HOME})
+if(NOT DEFINED POWERFACTORY_HOME)
+    message(FATAL_ERROR "POWERFACTORY_HOME is not defined")
+endif()
 
 add_library(powerfactory-api STATIC IMPORTED)
 set_target_properties(powerfactory-api PROPERTIES IMPORTED_LOCATION ${POWERFACTORY_HOME}\\Api\\lib\\VS2019\\digapivalue.lib)

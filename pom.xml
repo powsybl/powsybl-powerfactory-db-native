@@ -55,7 +55,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Automatic-Module-Name>com.powsybl.mathnative</Automatic-Module-Name>
+                            <Automatic-Module-Name>com.powsybl.powerfactory.dbnative</Automatic-Module-Name>
                         </manifestEntries>
                     </archive>
                 </configuration>
