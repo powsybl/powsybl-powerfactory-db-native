@@ -34,8 +34,7 @@ void readValues(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &
         case api::v2::DataObject::AttributeType::TYPE_STRING: {
             auto value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()));
             if (value) {
-                std::string strValue = value->GetString();
-                objectBuilder.setStringAttributeValue(id, attributeName, strValue);
+                objectBuilder.setStringAttributeValue(id, attributeName, value->GetString());
             }
             break;
         }
