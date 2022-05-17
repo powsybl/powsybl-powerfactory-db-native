@@ -32,8 +32,11 @@ void readValues(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &
     // set attribute value to object
     switch (type) {
         case api::v2::DataObject::AttributeType::TYPE_STRING: {
-            std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()))->GetString();
-            objectBuilder.setStringAttributeValue(id, attributeName, value);
+            auto value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str()));
+            if (value) {
+                std::string strValue = value->GetString();
+                objectBuilder.setStringAttributeValue(id, attributeName, strValue);
+            }
             break;
         }
 
@@ -112,8 +115,9 @@ void readValues(Api &api, const jni::ComPowsyblPowerFactoryDbDataObjectBuilder &
                 std::vector<std::string> values;
                 values.reserve(rowCount);
                 for (int row = 0; row < rowCount; row++) {
-                    std::string value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str(), row))->GetString();
-                    values.push_back(value);
+                    auto value = api.makeValueUniquePtr(object->GetAttributeString(attributeName.c_str(), row));
+                    std::string valueStr = value ? value->GetString() : "";
+                    values.push_back(valueStr);
                 }
                 objectBuilder.setStringVectorAttributeValue(id, attributeName, values);
             }
